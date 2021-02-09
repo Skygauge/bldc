@@ -13,6 +13,10 @@ An open source motor controller firmware.
 This is the source code for the VESC DC/BLDC/FOC controller. Read more at
 [https://vesc-project.com/](https://vesc-project.com/)
 
+This fork is used for testing multiple motors over UART . It uses new
+message definitions that allow for more efficient data transfers at low-
+latencies.
+
 ## Supported boards
 
 All  of them!

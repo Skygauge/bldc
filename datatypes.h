@@ -22,7 +22,11 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#ifdef ARDUINO
+typedef uint32_t systime_t;
+#else
 #include "ch.h"
+#endif
 
 // Data types
 typedef enum {
@@ -221,7 +225,7 @@ typedef enum {
 	HFI_SAMPLES_8 = 0,
 	HFI_SAMPLES_16,
 	HFI_SAMPLES_32
-} foc_hfi_samples;
+} foc_hfi_samples_t;
 
 typedef enum {
 	BMS_TYPE_NONE = 0,
@@ -375,7 +379,7 @@ typedef struct {
 	float foc_sl_erpm_hfi;
 	uint16_t foc_hfi_start_samples;
 	float foc_hfi_obs_ovr_sec;
-	foc_hfi_samples foc_hfi_samples;
+	foc_hfi_samples_t foc_hfi_samples;
 
 	// GPDrive
 	int gpd_buffer_notify_left;
@@ -924,6 +928,16 @@ typedef enum {
 	COMM_ERASE_BOOTLOADER_ALL_CAN_HW,
 
 	COMM_SET_ODOMETER,
+
+    // VPT commands
+    COMM_VPT_PING,
+    COMM_VPT_SET_DUTY,
+    COMM_VPT_SET_DUTY_GET_TELEMETRY,
+    COMM_VPT_SET_SPEED,
+    COMM_VPT_SET_SPEED_GET_TELEMETRY,
+    COMM_VPT_GET_TELEMETRY,
+    COMM_VPT_TELEMETRY,
+    COMM_VPT_STATE,
 } COMM_PACKET_ID;
 
 // CAN commands
