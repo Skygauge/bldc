@@ -38,6 +38,7 @@
 #include "mempools.h"
 #include "shutdown.h"
 #include "bms.h"
+#include "vpt.h"
 
 // Settings
 #define RX_FRAMES_SIZE	100
@@ -945,7 +946,7 @@ static THD_FUNCTION(cancom_read_thread, arg) {
 	while(!chThdShouldTerminateX()) {
 		// Feed watchdog
 		timeout_feed_WDT(THREAD_CANBUS);
-        
+
 		if (chEvtWaitAnyTimeout(ALL_EVENTS, MS2ST(10)) == 0) {
 			continue;
 		}
@@ -967,6 +968,29 @@ static THD_FUNCTION(cancom_read_thread, arg) {
 	}
 
 	chEvtUnregister(&HW_CAN_DEV.rxfull_event, &el);
+}
+
+static void comm_can_send(uint8_t* data, unsigned int len)
+{
+    uint32_t id = (app_get_configuration()->controller_id << 16)
+                | CAN_VPT_SYS_ID;
+    comm_can_transmit_eid(id, data, len);
+}
+
+static bool handle_vpt_msg(CANRxFrame rxmsg)
+{
+    switch (rxmsg.data8[0]) {
+    case COMM_VPT_PING:
+    case COMM_VPT_SET_DUTY_GET_TELEMETRY:
+    case COMM_VPT_SET_DUTY:
+    case COMM_VPT_SET_SPEED_GET_TELEMETRY:
+    case COMM_VPT_SET_SPEED:
+    case COMM_VPT_GET_TELEMETRY:
+        vpt_process_cmd(rxmsg.data8, rxmsg.DLC, comm_can_send);
+        return true;
+    default:
+        return false;
+    }
 }
 
 static THD_FUNCTION(cancom_process_thread, arg) {
@@ -1005,7 +1029,7 @@ static THD_FUNCTION(cancom_process_thread, arg) {
 		while ((rxmsg_tmp = comm_can_get_rx_frame()) != 0) {
 			CANRxFrame rxmsg = *rxmsg_tmp;
 
-			if (rxmsg.IDE == CAN_IDE_EXT) {
+			if (!handle_vpt_msg(rxmsg) && rxmsg.IDE == CAN_IDE_EXT) {
 				bool eid_cb_used = false;
 				if (eid_callback) {
 					eid_cb_used = eid_callback(rxmsg.EID, rxmsg.data8, rxmsg.DLC);

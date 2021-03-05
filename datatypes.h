@@ -940,6 +940,8 @@ typedef enum {
     COMM_VPT_STATE,
 } COMM_PACKET_ID;
 
+#define CAN_VPT_SYS_ID 0xAA00
+
 // CAN commands
 typedef enum {
 	CAN_PACKET_SET_DUTY = 0,
