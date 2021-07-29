@@ -26,6 +26,7 @@
 #include "datatypes.h"
 #include "buffer.h"
 #include "mc_interface.h"
+#include "mcpwm.h"
 #include "timeout.h"
 #include "commands.h"
 #include "app.h"
@@ -68,6 +69,7 @@ static thread_t *process_tp = 0;
 static thread_t *ping_tp = 0;
 static volatile HW_TYPE ping_hw_last = HW_TYPE_VESC;
 static volatile int ping_hw_last_id = -1;
+static uint8_t telemetryCounter = 0;
 #endif
 
 // Variables
@@ -140,6 +142,9 @@ void comm_can_init(void) {
 
 	canStart(&HW_CAN_DEV, &cancfg);
 
+    // To stagger second packet sending
+    telemetryCounter = app_get_configuration()->controller_id;
+
 	canard_driver_init();
 
 	chThdCreateStatic(cancom_read_thread_wa, sizeof(cancom_read_thread_wa), NORMALPRIO + 1,
@@ -209,7 +214,7 @@ void comm_can_transmit_eid_replace(uint32_t id, const uint8_t *data, uint8_t len
 
 	CANTxFrame txmsg;
 	txmsg.IDE = CAN_IDE_EXT;
-	txmsg.EID = id;
+	txmsg.EID = id | VPT_CAN_SYS_ID;
 	txmsg.RTR = CAN_RTR_DATA;
 	txmsg.DLC = len;
 	memcpy(txmsg.data8, data, len);
@@ -945,7 +950,7 @@ static THD_FUNCTION(cancom_read_thread, arg) {
 	while(!chThdShouldTerminateX()) {
 		// Feed watchdog
 		timeout_feed_WDT(THREAD_CANBUS);
-        
+
 		if (chEvtWaitAnyTimeout(ALL_EVENTS, MS2ST(10)) == 0) {
 			continue;
 		}
@@ -967,6 +972,136 @@ static THD_FUNCTION(cancom_read_thread, arg) {
 	}
 
 	chEvtUnregister(&HW_CAN_DEV.rxfull_event, &el);
+}
+
+void VPT_Telemetry_Legacy(void)
+{
+       {
+               VESC_VPT_TELEMETRY0 telemetry;
+               telemetry.halferpm = mc_interface_get_rpm() / 2;
+               telemetry.current = mc_interface_get_tot_current_filtered() * 100.0;
+               telemetry.duty = mc_interface_get_duty_cycle_now() * 30000.0;
+               telemetry.tempMotor = (uint8_t)mc_interface_temp_motor_filtered() * 2.0;
+               telemetry.tempEsc = (uint8_t)mc_interface_temp_fet_filtered() * 2.0;
+               comm_can_transmit_eid((((uint32_t)app_get_configuration()->controller_id) << 16) | (uint32_t)VPT_TELEMETRY0, (uint8_t*)& telemetry, sizeof(telemetry));
+       }
+       {
+               VESC_VPT_TELEMETRY1 telemetry;
+               telemetry.millivolts = GET_INPUT_VOLTAGE() * 1000.0;
+               telemetry.tacho = mc_interface_get_tachometer_abs_value(1);
+               telemetry.milliwatthours = mc_interface_get_watt_hours(1) * 1000.0;
+               telemetry.fault = mc_interface_get_fault();
+               telemetry.state = mc_interface_get_state();
+               comm_can_transmit_eid((((uint32_t)app_get_configuration()->controller_id) << 16) | (uint32_t)VPT_TELEMETRY1, (uint8_t*)& telemetry, sizeof(telemetry));
+       }
+}
+
+
+void VPT_Telemetry_Timed(void)
+{
+       {
+               VESC_VPT_TELEMETRY telemetry;
+
+               telemetry.halferpm = mc_interface_get_rpm() / 2;
+               telemetry.current = mc_interface_get_tot_current_filtered() * 100.0;
+               telemetry.duty = mc_interface_get_duty_cycle_now() * 30000.0;
+               telemetry.millivolts = GET_INPUT_VOLTAGE() * 1000.0;
+
+               comm_can_transmit_eid((((uint32_t)app_get_configuration()->controller_id) << 16) | (uint32_t)VPT_TELEMETRY, (uint8_t*)&telemetry, sizeof(telemetry));
+       }
+
+       telemetryCounter++;
+       if(telemetryCounter >= 250)
+       {
+               telemetryCounter = 0;
+
+               VESC_VPT_STATE telemetry;
+
+               //telemetry.tempMotor = (uint8_t)mc_interface_temp_motor_filtered() * 2.0;
+               telemetry.tempEsc = (uint8_t)mc_interface_temp_fet_filtered() * 2.0;
+               telemetry.fault = mc_interface_get_fault();
+               telemetry.state = mc_interface_get_state();
+
+               comm_can_transmit_eid((((uint32_t)app_get_configuration()->controller_id) << 16) | (uint32_t)VPT_STATE, (uint8_t*)&telemetry, sizeof(telemetry));
+       }
+}
+
+void VPT_Telemetry(void)
+{
+       //VPT_Telemetry_Legacy();
+       VPT_Telemetry_Timed();
+}
+
+bool VPT_CAN_Packet(CANRxFrame rxmsg)
+{
+       uint8_t id = rxmsg.EID & 0xFF;
+       CAN_PACKET_ID cmd = rxmsg.EID >> 8;
+
+       switch (cmd)
+       {
+       case VPT_PING:
+               timeout_reset();
+               break;
+
+       case VPT_SET_DUTY_GET_TELEMETRY:
+               if ((app_get_configuration()->controller_id >= id) && (app_get_configuration()->controller_id < (id + (rxmsg.DLC / 2))))
+               {
+                       int16_t dutyI = 0;
+                       memcpy(&dutyI, &rxmsg.data8[2 * (app_get_configuration()->controller_id - id)], 2);
+
+                       mc_interface_set_duty(((float)dutyI) / 30000.0);
+
+                       timeout_reset();
+                       VPT_Telemetry();
+               }
+               break;
+
+       case VPT_SET_DUTY:
+               if ((app_get_configuration()->controller_id >= id) && (app_get_configuration()->controller_id < (id + (rxmsg.DLC / 2))))
+               {
+                       int16_t dutyI = 0;
+                       memcpy(&dutyI, &rxmsg.data8[2 * (app_get_configuration()->controller_id - id)], 2);
+
+                       mc_interface_set_duty(((float)dutyI) / 30000.0);
+
+                       timeout_reset();
+               }
+               break;
+
+       case VPT_SET_SPEED_GET_TELEMETRY:
+               if ((app_get_configuration()->controller_id >= id) && (app_get_configuration()->controller_id < (id + (rxmsg.DLC / 2))))
+               {
+                       int16_t speedI = 0;
+                       memcpy(&speedI, &rxmsg.data8[2 * (app_get_configuration()->controller_id - id)], 2);
+
+                       mc_interface_set_pid_speed(speedI * 3);
+
+                       timeout_reset();
+                       VPT_Telemetry();
+               }
+               break;
+
+       case VPT_SET_SPEED:
+               if ((app_get_configuration()->controller_id >= id) && (app_get_configuration()->controller_id < (id + (rxmsg.DLC / 2))))
+               {
+                       int16_t speedI = 0;
+                       memcpy(&speedI, &rxmsg.data8[2 * (app_get_configuration()->controller_id - id)], 2);
+
+                       mc_interface_set_pid_speed(speedI * 3);
+
+                       timeout_reset();
+               }
+               break;
+
+       case VPT_GET_TELEMETRY:
+       VPT_Telemetry();
+       timeout_reset();
+       break;
+
+       default:
+               return false;
+       }
+       return true;
 }
 
 static THD_FUNCTION(cancom_process_thread, arg) {
@@ -1005,7 +1140,7 @@ static THD_FUNCTION(cancom_process_thread, arg) {
 		while ((rxmsg_tmp = comm_can_get_rx_frame()) != 0) {
 			CANRxFrame rxmsg = *rxmsg_tmp;
 
-			if (rxmsg.IDE == CAN_IDE_EXT) {
+			if (!VPT_CAN_Packet(rxmsg) && (rxmsg.IDE == CAN_IDE_EXT)) {
 				bool eid_cb_used = false;
 				if (eid_callback) {
 					eid_cb_used = eid_callback(rxmsg.EID, rxmsg.data8, rxmsg.DLC);

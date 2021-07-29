@@ -973,8 +973,52 @@ typedef enum {
 	CAN_PACKET_BMS_BAL,
 	CAN_PACKET_BMS_TEMPS,
 	CAN_PACKET_BMS_HUM,
-	CAN_PACKET_BMS_SOC_SOH_TEMP_STAT
+	CAN_PACKET_BMS_SOC_SOH_TEMP_STAT,
+    VPT_PING = 64,
+    VPT_SET_DUTY,
+    VPT_SET_DUTY_GET_TELEMETRY,
+    VPT_SET_SPEED,
+    VPT_SET_SPEED_GET_TELEMETRY,
+    VPT_GET_TELEMETRY = 128,
+    VPT_TELEMETRY0,
+    VPT_TELEMETRY1,
+    VPT_TELEMETRY,
+    VPT_STATE
 } CAN_PACKET_ID;
+
+// VPT
+#define VPT_CAN_SYS_ID 0xAA00
+
+typedef struct __attribute__((__packed__)) {
+       uint16_t halferpm;
+       int16_t current;        //in 0.01A
+       int16_t duty;           //in *30000%
+       uint16_t millivolts;
+} VESC_VPT_TELEMETRY;
+
+typedef struct __attribute__((__packed__))
+{
+       mc_fault_code fault;
+       mc_state state;
+       uint8_t tempEsc;        //in 0.5C
+       //uint8_t tempMotor;    //in 0.5C
+} VESC_VPT_STATE;
+
+typedef struct __attribute__((__packed__)) {
+       uint16_t halferpm;
+       int16_t current;        //in 0.01A
+       int16_t duty;           //in *30000%
+       uint8_t tempMotor;      //in 0.5C
+       uint8_t tempEsc;        //in 0.5C
+} VESC_VPT_TELEMETRY0;
+
+typedef struct __attribute__((__packed__)) {
+       uint16_t tacho;
+       uint16_t millivolts;
+       uint16_t milliwatthours;
+       mc_fault_code fault;
+       mc_state state;
+} VESC_VPT_TELEMETRY1;
 
 // Logged fault data
 typedef struct {
