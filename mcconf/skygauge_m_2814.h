@@ -130,7 +130,7 @@
 
 // Maximum Duty Cycle
 #ifndef MCCONF_L_MAX_DUTY
-#define MCCONF_L_MAX_DUTY 1
+#define MCCONF_L_MAX_DUTY 0.99
 #endif
 
 // Maximum Wattage
@@ -250,7 +250,7 @@
 
 // Switching Frequency
 #ifndef MCCONF_FOC_F_SW
-#define MCCONF_FOC_F_SW 32000
+#define MCCONF_FOC_F_SW 30000
 #endif
 
 // Dead Time Compensation
