@@ -1074,7 +1074,11 @@ bool VPT_CAN_Packet(CANRxFrame rxmsg)
                        int16_t speedI = 0;
                        memcpy(&speedI, &rxmsg.data8[2 * (app_get_configuration()->controller_id - id)], 2);
 
-                       mc_interface_set_pid_speed(speedI * 3);
+                       if ((speedI == 0) && ((mc_interface_get_rpm() / 7.0) < 3000)) {
+                           mc_interface_release_motor();
+                       } else {
+                           mc_interface_set_pid_speed(speedI * 3);
+                       }
 
                        timeout_reset();
                        VPT_Telemetry();
