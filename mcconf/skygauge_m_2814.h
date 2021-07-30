@@ -735,7 +735,7 @@
 
 // BMS Type
 #ifndef MCCONF_BMS_TYPE
-#define MCCONF_BMS_TYPE 1
+#define MCCONF_BMS_TYPE 0
 #endif
 
 // Temperature Limit Start
