@@ -365,7 +365,7 @@
 
 // Openloop ERPM
 #ifndef MCCONF_FOC_OPENLOOP_RPM
-#define MCCONF_FOC_OPENLOOP_RPM 400
+#define MCCONF_FOC_OPENLOOP_RPM 1250
 #endif
 
 // Openloop ERPM at Min Current
@@ -390,12 +390,12 @@
 
 // Openloop Lock Time
 #ifndef MCCONF_FOC_SL_OPENLOOP_T_LOCK
-#define MCCONF_FOC_SL_OPENLOOP_T_LOCK 0
+#define MCCONF_FOC_SL_OPENLOOP_T_LOCK 0.5
 #endif
 
 // Openloop Ramp Time
 #ifndef MCCONF_FOC_SL_OPENLOOP_T_RAMP
-#define MCCONF_FOC_SL_OPENLOOP_T_RAMP 0
+#define MCCONF_FOC_SL_OPENLOOP_T_RAMP 0.4
 #endif
 
 // Openloop Time
@@ -575,7 +575,7 @@
 
 // Minimum ERPM
 #ifndef MCCONF_S_PID_MIN_RPM
-#define MCCONF_S_PID_MIN_RPM 900
+#define MCCONF_S_PID_MIN_RPM 5000
 #endif
 
 // Allow Braking
