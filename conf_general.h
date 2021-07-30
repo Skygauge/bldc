@@ -103,7 +103,7 @@
 
 // Second revision with separate UART for NRF51
 //#define HW75_300_REV_2
-#define HW75_300_REV_3
+//#define HW75_300_REV_3
 
 //#define HW_SOURCE "hw_75_300.c"
 //#define HW_HEADER "hw_75_300.h"
@@ -218,8 +218,8 @@
 //#define APPCONF_CAN_BAUD_RATE		CAN_BAUD_75K
 
 #include "hw.h"
-#include "mcconf_default.h"
-#include "appconf_default.h"
+//#include "mcconf_default.h"
+//#include "appconf_default.h"
 
 /*
  * Enable blackmagic probe output on SWD port
