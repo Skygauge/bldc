@@ -1357,6 +1357,10 @@ float mcpwm_foc_get_phase_observer(void) {
 	return angle;
 }
 
+bool mcpwm_foc_get_phase_observer_override(void) {
+    return motor_now()->m_phase_observer_override;
+}
+
 /**
  * Read the phase from based on the encoder.
  *
@@ -1387,7 +1391,7 @@ void mcpwm_foc_get_current_offsets(
 		volatile int *curr1_offset,
 		volatile int *curr2_offset,
 		bool is_second_motor) {
-	volatile motor_all_state_t *motor = M_MOTOR(is_second_motor); 
+	volatile motor_all_state_t *motor = M_MOTOR(is_second_motor);
 	*curr0_offset = motor->m_curr_ofs[0];
 	*curr1_offset = motor->m_curr_ofs[1];
 	*curr2_offset = motor->m_curr_ofs[2];
