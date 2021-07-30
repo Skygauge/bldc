@@ -1032,25 +1032,22 @@ void VPT_Telemetry(void)
        VPT_Telemetry_Timed();
 }
 
-static void set_current_limit(void)
+static void set_current_limit(float erpm)
 {
-    static bool prev_is_openloop = false;
-    bool is_openloop = mc_interface_get_openloop();
-    if (is_openloop != prev_is_openloop) {
-        if (is_openloop) {
-            mc_configuration *mcconf = mempools_alloc_mcconf();
-            *mcconf = *mc_interface_get_configuration();
-            mcconf->l_current_max = 1;
-            mc_interface_set_configuration(mcconf);
-            mempools_free_mcconf(mcconf);
-        } else {
-            mc_configuration *mcconf = mempools_alloc_mcconf();
-            *mcconf = *mc_interface_get_configuration();
-            mcconf->l_current_max = MCCONF_L_CURRENT_MAX;
-            mc_interface_set_configuration(mcconf);
-            mempools_free_mcconf(mcconf);
-        }
-        prev_is_openloop = is_openloop;
+    if ((erpm < MCCONF_SOFTSTART_ERPM_MAX)
+            && (mc_interface_get_configuration()->l_current_max > MCCONF_SOFTSTART_CURRENT_MAX)) {
+        mc_configuration *mcconf = mempools_alloc_mcconf();
+        *mcconf = *mc_interface_get_configuration();
+        mcconf->l_current_max = MCCONF_SOFTSTART_CURRENT_MAX;
+        mc_interface_set_configuration(mcconf);
+        mempools_free_mcconf(mcconf);
+    } else if ((erpm >= MCCONF_SOFTSTART_ERPM_MAX)
+               && (mc_interface_get_configuration()->l_current_max < MCCONF_L_CURRENT_MAX)) {
+        mc_configuration *mcconf = mempools_alloc_mcconf();
+        *mcconf = *mc_interface_get_configuration();
+        mcconf->l_current_max = MCCONF_L_CURRENT_MAX;
+        mc_interface_set_configuration(mcconf);
+        mempools_free_mcconf(mcconf);
     }
 }
 
@@ -1096,7 +1093,7 @@ bool VPT_CAN_Packet(CANRxFrame rxmsg)
                        int16_t speedI = 0;
                        memcpy(&speedI, &rxmsg.data8[2 * (app_get_configuration()->controller_id - id)], 2);
 
-                       set_current_limit();
+                       set_current_limit(speedI * 3);
 
                        if ((speedI == 0) && ((mc_interface_get_rpm() / 7.0) < 3000)) {
                            mc_interface_release_motor();

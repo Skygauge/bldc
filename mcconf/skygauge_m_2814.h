@@ -23,6 +23,16 @@
 #define MCCONF_SENSOR_MODE 0
 #endif
 
+// Soft start max current
+#ifndef MCCONF_SOFTSTART_CURRENT_MAX
+#define MCCONF_SOFTSTART_CURRENT_MAX 2
+#endif
+
+// Soft start max ERPM
+#ifndef MCCONF_SOFTSTART_ERPM_MAX
+#define MCCONF_SOFTSTART_ERPM_MAX (1100 * 7)
+#endif
+
 // Motor Current Max
 #ifndef MCCONF_L_CURRENT_MAX
 #define MCCONF_L_CURRENT_MAX 45
