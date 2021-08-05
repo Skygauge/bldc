@@ -72,7 +72,7 @@
 // Mark3 version of HW60 with power switch and separate NRF UART.
 //#define HW60_IS_MK3
 //#define HW60_IS_MK4
-#define HW60_IS_MK5
+//#define HW60_IS_MK5
 
 #define HW_SOURCE "hw_60.c"
 #define HW_HEADER "hw_60.h"
@@ -103,7 +103,7 @@
 
 // Second revision with separate UART for NRF51
 //#define HW75_300_REV_2
-#define HW75_300_REV_3
+//#define HW75_300_REV_3
 
 //#define HW_SOURCE "hw_75_300.c"
 //#define HW_HEADER "hw_75_300.h"
@@ -192,6 +192,7 @@
 //#include			"mcconf_sp_540kv.h"
 //#include			"mcconf_castle_2028.h"
 //#include			"mcconf_ellwee.h"
+#include            "skygauge_m_2814.h"
 //#include			"conf_test.h"
 
 /*
@@ -200,6 +201,7 @@
 //#include			"appconf_example_ppm.h"
 //#include			"appconf_custom.h"
 //#include			"appconf_ellwee.h"
+#include            "skygauge_app.h"
 
 /*
  * Set APP_CUSTOM_TO_USE to the name of the main C file of the custom application.
@@ -216,8 +218,8 @@
 //#define APPCONF_CAN_BAUD_RATE		CAN_BAUD_75K
 
 #include "hw.h"
-#include "mcconf_default.h"
-#include "appconf_default.h"
+//#include "mcconf_default.h"
+//#include "appconf_default.h"
 
 /*
  * Enable blackmagic probe output on SWD port
@@ -241,8 +243,8 @@
 /*
  * Settings for the external LEDs (hardcoded for now)
  */
-#define LED_EXT_BATT_LOW			28.0
-#define LED_EXT_BATT_HIGH			33.0
+#define LED_EXT_BATT_LOW			20.0
+#define LED_EXT_BATT_HIGH			22.2
 
 /*
  * Output WS2811 signal on the HALL1 pin. Notice that hall sensors can't be used
