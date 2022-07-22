@@ -974,6 +974,11 @@ static THD_FUNCTION(cancom_read_thread, arg) {
 	chEvtUnregister(&HW_CAN_DEV.rxfull_event, &el);
 }
 
+static float get_rpm(void)
+{
+    return mc_interface_get_rpm() * 2.0 / MCCONF_SI_MOTOR_POLES;
+}
+
 void VPT_Telemetry_Legacy(void)
 {
        {
@@ -995,7 +1000,6 @@ void VPT_Telemetry_Legacy(void)
                comm_can_transmit_eid((((uint32_t)app_get_configuration()->controller_id) << 16) | (uint32_t)VPT_TELEMETRY1, (uint8_t*)& telemetry, sizeof(telemetry));
        }
 }
-
 
 void VPT_Telemetry_Timed(void)
 {
@@ -1034,14 +1038,14 @@ void VPT_Telemetry(void)
 
 static void set_current_limit(float erpm)
 {
-    if ((erpm < MCCONF_SOFTSTART_ERPM_MAX)
+    if ((fabsf(erpm) < MCCONF_SOFTSTART_ERPM_MAX)
             && (mc_interface_get_configuration()->l_current_max > MCCONF_SOFTSTART_CURRENT_MAX)) {
         mc_configuration *mcconf = mempools_alloc_mcconf();
         *mcconf = *mc_interface_get_configuration();
         mcconf->l_current_max = MCCONF_SOFTSTART_CURRENT_MAX;
         mc_interface_set_configuration(mcconf);
         mempools_free_mcconf(mcconf);
-    } else if ((erpm >= MCCONF_SOFTSTART_ERPM_MAX)
+    } else if ((fabsf(erpm) >= MCCONF_SOFTSTART_ERPM_MAX)
                && (mc_interface_get_configuration()->l_current_max < MCCONF_L_CURRENT_MAX)) {
         mc_configuration *mcconf = mempools_alloc_mcconf();
         *mcconf = *mc_interface_get_configuration();
@@ -1092,13 +1096,13 @@ bool VPT_CAN_Packet(CANRxFrame rxmsg)
                {
                        int16_t speedI = 0;
                        memcpy(&speedI, &rxmsg.data8[2 * (app_get_configuration()->controller_id - id)], 2);
+                       float trgt_erpm = speedI * 3;
+                       set_current_limit(trgt_erpm);
 
-                       set_current_limit(speedI * 3);
-
-                       if ((speedI == 0) && ((mc_interface_get_rpm() / 7.0) < 3000)) {
+                       if ((speedI == 0) && (fabsf(get_rpm()) < 3000)) {
                            mc_interface_release_motor();
                        } else {
-                           mc_interface_set_pid_speed(speedI * 3);
+                           mc_interface_set_pid_speed(trgt_erpm);
                        }
 
                        timeout_reset();
