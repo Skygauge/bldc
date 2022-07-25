@@ -988,6 +988,7 @@ typedef enum {
 
 // VPT
 #define VPT_CAN_SYS_ID 0xAA00
+#define DUTY_SCALE_FACTOR 30000.0
 
 typedef struct __attribute__((__packed__)) {
        uint16_t halferpm;

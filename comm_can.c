@@ -986,7 +986,7 @@ static void VPT_Telemetry(void)
 
                telemetry.halferpm = mc_interface_get_rpm() / 2;
                telemetry.current = mc_interface_get_tot_current_filtered() * 100.0;
-               telemetry.duty = mc_interface_get_duty_cycle_now() * 30000.0;
+               telemetry.duty = mc_interface_get_duty_cycle_now() * DUTY_SCALE_FACTOR;
                telemetry.millivolts = GET_INPUT_VOLTAGE() * 1000.0;
 
                comm_can_transmit_eid((((uint32_t)app_get_configuration()->controller_id) << 16) | (uint32_t)VPT_TELEMETRY, (uint8_t*)&telemetry, sizeof(telemetry));
@@ -1044,7 +1044,7 @@ bool VPT_CAN_Packet(CANRxFrame rxmsg)
                        int16_t dutyI = 0;
                        memcpy(&dutyI, &rxmsg.data8[2 * (app_get_configuration()->controller_id - id)], 2);
 
-                       mc_interface_set_duty(((float)dutyI) / 30000.0);
+                       mc_interface_set_duty(((float)dutyI) / DUTY_SCALE_FACTOR);
 
                        timeout_reset();
                        VPT_Telemetry();
@@ -1057,7 +1057,7 @@ bool VPT_CAN_Packet(CANRxFrame rxmsg)
                        int16_t dutyI = 0;
                        memcpy(&dutyI, &rxmsg.data8[2 * (app_get_configuration()->controller_id - id)], 2);
 
-                       mc_interface_set_duty(((float)dutyI) / 30000.0);
+                       mc_interface_set_duty(((float)dutyI) / DUTY_SCALE_FACTOR);
 
                        timeout_reset();
                }
