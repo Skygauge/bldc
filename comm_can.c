@@ -979,29 +979,7 @@ static float get_rpm(void)
     return mc_interface_get_rpm() * 2.0 / MCCONF_SI_MOTOR_POLES;
 }
 
-void VPT_Telemetry_Legacy(void)
-{
-       {
-               VESC_VPT_TELEMETRY0 telemetry;
-               telemetry.halferpm = mc_interface_get_rpm() / 2;
-               telemetry.current = mc_interface_get_tot_current_filtered() * 100.0;
-               telemetry.duty = mc_interface_get_duty_cycle_now() * 30000.0;
-               telemetry.tempMotor = (uint8_t)mc_interface_temp_motor_filtered() * 2.0;
-               telemetry.tempEsc = (uint8_t)mc_interface_temp_fet_filtered() * 2.0;
-               comm_can_transmit_eid((((uint32_t)app_get_configuration()->controller_id) << 16) | (uint32_t)VPT_TELEMETRY0, (uint8_t*)& telemetry, sizeof(telemetry));
-       }
-       {
-               VESC_VPT_TELEMETRY1 telemetry;
-               telemetry.millivolts = GET_INPUT_VOLTAGE() * 1000.0;
-               telemetry.tacho = mc_interface_get_tachometer_abs_value(1);
-               telemetry.milliwatthours = mc_interface_get_watt_hours(1) * 1000.0;
-               telemetry.fault = mc_interface_get_fault();
-               telemetry.state = mc_interface_get_state();
-               comm_can_transmit_eid((((uint32_t)app_get_configuration()->controller_id) << 16) | (uint32_t)VPT_TELEMETRY1, (uint8_t*)& telemetry, sizeof(telemetry));
-       }
-}
-
-void VPT_Telemetry_Timed(void)
+static void VPT_Telemetry(void)
 {
        {
                VESC_VPT_TELEMETRY telemetry;
@@ -1028,12 +1006,6 @@ void VPT_Telemetry_Timed(void)
 
                comm_can_transmit_eid((((uint32_t)app_get_configuration()->controller_id) << 16) | (uint32_t)VPT_STATE, (uint8_t*)&telemetry, sizeof(telemetry));
        }
-}
-
-void VPT_Telemetry(void)
-{
-       //VPT_Telemetry_Legacy();
-       VPT_Telemetry_Timed();
 }
 
 static void set_current_limit(float erpm)
