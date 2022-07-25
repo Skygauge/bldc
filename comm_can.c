@@ -214,7 +214,7 @@ void comm_can_transmit_eid_replace(uint32_t id, const uint8_t *data, uint8_t len
 
 	CANTxFrame txmsg;
 	txmsg.IDE = CAN_IDE_EXT;
-	txmsg.EID = id | VPT_CAN_SYS_ID;
+	txmsg.EID = id | (VPT_CAN_SYS_ID << 8);
 	txmsg.RTR = CAN_RTR_DATA;
 	txmsg.DLC = len;
 	memcpy(txmsg.data8, data, len);
@@ -974,9 +974,19 @@ static THD_FUNCTION(cancom_read_thread, arg) {
 	chEvtUnregister(&HW_CAN_DEV.rxfull_event, &el);
 }
 
+static float to_erpm(float rpm)
+{
+    return rpm * MCCONF_SI_MOTOR_POLES / 2.0;
+}
+
+static float to_rpm(float erpm)
+{
+    return erpm * 2.0 / MCCONF_SI_MOTOR_POLES;
+}
+
 static float get_rpm(void)
 {
-    return mc_interface_get_rpm() * 2.0 / MCCONF_SI_MOTOR_POLES;
+    return to_rpm(mc_interface_get_rpm());
 }
 
 static void VPT_Telemetry(void)
@@ -984,10 +994,10 @@ static void VPT_Telemetry(void)
        {
                VESC_VPT_TELEMETRY telemetry;
 
-               telemetry.halferpm = mc_interface_get_rpm() / 2;
-               telemetry.current = mc_interface_get_tot_current_filtered() * 100.0;
+               telemetry.half_rpm = get_rpm() * 2.0;
+               telemetry.current_cA = mc_interface_get_tot_current_filtered() * 100.0;
                telemetry.duty = mc_interface_get_duty_cycle_now() * DUTY_SCALE_FACTOR;
-               telemetry.millivolts = GET_INPUT_VOLTAGE() * 1000.0;
+               telemetry.voltage_mV = GET_INPUT_VOLTAGE() * 1000.0;
 
                comm_can_transmit_eid((((uint32_t)app_get_configuration()->controller_id) << 16) | (uint32_t)VPT_TELEMETRY, (uint8_t*)&telemetry, sizeof(telemetry));
        }
@@ -1064,23 +1074,23 @@ bool VPT_CAN_Packet(CANRxFrame rxmsg)
                break;
 
        case VPT_SET_SPEED_GET_TELEMETRY:
-               if ((app_get_configuration()->controller_id >= id) && (app_get_configuration()->controller_id < (id + (rxmsg.DLC / 2))))
-               {
-                       int16_t speedI = 0;
-                       memcpy(&speedI, &rxmsg.data8[2 * (app_get_configuration()->controller_id - id)], 2);
-                       float trgt_erpm = speedI * 3;
-                       set_current_limit(trgt_erpm);
+           if ((app_get_configuration()->controller_id >= id)
+                   && (app_get_configuration()->controller_id < (id + (rxmsg.DLC / 2)))) {
+               int16_t trgt_half_rpm = 0;
+               memcpy(&trgt_half_rpm, &rxmsg.data8[2 * (app_get_configuration()->controller_id - id)], 2);
+               float trgt_erpm = to_erpm(trgt_half_rpm / 2.0);
+               set_current_limit(trgt_erpm);
 
-                       if ((speedI == 0) && (fabsf(get_rpm()) < 3000)) {
-                           mc_interface_release_motor();
-                       } else {
-                           mc_interface_set_pid_speed(trgt_erpm);
-                       }
-
-                       timeout_reset();
-                       VPT_Telemetry();
+               if ((trgt_erpm == 0) && (fabsf(get_rpm()) < 3000)) {
+                   mc_interface_release_motor();
+               } else {
+                   mc_interface_set_pid_speed(trgt_erpm);
                }
-               break;
+
+               timeout_reset();
+               VPT_Telemetry();
+           }
+           break;
 
        case VPT_SET_SPEED:
                if ((app_get_configuration()->controller_id >= id) && (app_get_configuration()->controller_id < (id + (rxmsg.DLC / 2))))

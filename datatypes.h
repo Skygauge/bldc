@@ -987,14 +987,14 @@ typedef enum {
 } CAN_PACKET_ID;
 
 // VPT
-#define VPT_CAN_SYS_ID 0xAA00
+#define VPT_CAN_SYS_ID 0xAB
 #define DUTY_SCALE_FACTOR 30000.0
 
 typedef struct __attribute__((__packed__)) {
-       uint16_t halferpm;
-       int16_t current;        //in 0.01A
-       int16_t duty;           //in *30000%
-       uint16_t millivolts;
+       int16_t half_rpm;
+       int16_t current_cA;
+       int16_t duty;
+       int16_t voltage_mV;
 } VESC_VPT_TELEMETRY;
 
 typedef struct __attribute__((__packed__))
