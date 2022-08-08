@@ -214,7 +214,7 @@ void comm_can_transmit_eid_replace(uint32_t id, const uint8_t *data, uint8_t len
 
 	CANTxFrame txmsg;
 	txmsg.IDE = CAN_IDE_EXT;
-	txmsg.EID = id | VPT_CAN_SYS_ID;
+	txmsg.EID = id | (VPT_CAN_SYS_ID << 8);
 	txmsg.RTR = CAN_RTR_DATA;
 	txmsg.DLC = len;
 	memcpy(txmsg.data8, data, len);
@@ -974,38 +974,30 @@ static THD_FUNCTION(cancom_read_thread, arg) {
 	chEvtUnregister(&HW_CAN_DEV.rxfull_event, &el);
 }
 
-void VPT_Telemetry_Legacy(void)
+static float to_erpm(float rpm)
 {
-       {
-               VESC_VPT_TELEMETRY0 telemetry;
-               telemetry.halferpm = mc_interface_get_rpm() / 2;
-               telemetry.current = mc_interface_get_tot_current_filtered() * 100.0;
-               telemetry.duty = mc_interface_get_duty_cycle_now() * 30000.0;
-               telemetry.tempMotor = (uint8_t)mc_interface_temp_motor_filtered() * 2.0;
-               telemetry.tempEsc = (uint8_t)mc_interface_temp_fet_filtered() * 2.0;
-               comm_can_transmit_eid((((uint32_t)app_get_configuration()->controller_id) << 16) | (uint32_t)VPT_TELEMETRY0, (uint8_t*)& telemetry, sizeof(telemetry));
-       }
-       {
-               VESC_VPT_TELEMETRY1 telemetry;
-               telemetry.millivolts = GET_INPUT_VOLTAGE() * 1000.0;
-               telemetry.tacho = mc_interface_get_tachometer_abs_value(1);
-               telemetry.milliwatthours = mc_interface_get_watt_hours(1) * 1000.0;
-               telemetry.fault = mc_interface_get_fault();
-               telemetry.state = mc_interface_get_state();
-               comm_can_transmit_eid((((uint32_t)app_get_configuration()->controller_id) << 16) | (uint32_t)VPT_TELEMETRY1, (uint8_t*)& telemetry, sizeof(telemetry));
-       }
+    return rpm * MCCONF_SI_MOTOR_POLES / 2.0;
 }
 
+static float to_rpm(float erpm)
+{
+    return erpm * 2.0 / MCCONF_SI_MOTOR_POLES;
+}
 
-void VPT_Telemetry_Timed(void)
+static float get_rpm(void)
+{
+    return to_rpm(mc_interface_get_rpm());
+}
+
+static void VPT_Telemetry(void)
 {
        {
                VESC_VPT_TELEMETRY telemetry;
 
-               telemetry.halferpm = mc_interface_get_rpm() / 2;
-               telemetry.current = mc_interface_get_tot_current_filtered() * 100.0;
-               telemetry.duty = mc_interface_get_duty_cycle_now() * 30000.0;
-               telemetry.millivolts = GET_INPUT_VOLTAGE() * 1000.0;
+               telemetry.half_rpm = get_rpm() * 2.0;
+               telemetry.current_cA = mc_interface_get_tot_current_filtered() * 100.0;
+               telemetry.duty = mc_interface_get_duty_cycle_now() * DUTY_SCALE_FACTOR;
+               telemetry.voltage_mV = GET_INPUT_VOLTAGE() * 1000.0;
 
                comm_can_transmit_eid((((uint32_t)app_get_configuration()->controller_id) << 16) | (uint32_t)VPT_TELEMETRY, (uint8_t*)&telemetry, sizeof(telemetry));
        }
@@ -1026,22 +1018,16 @@ void VPT_Telemetry_Timed(void)
        }
 }
 
-void VPT_Telemetry(void)
-{
-       //VPT_Telemetry_Legacy();
-       VPT_Telemetry_Timed();
-}
-
 static void set_current_limit(float erpm)
 {
-    if ((erpm < MCCONF_SOFTSTART_ERPM_MAX)
+    if ((fabsf(erpm) < MCCONF_SOFTSTART_ERPM_MAX)
             && (mc_interface_get_configuration()->l_current_max > MCCONF_SOFTSTART_CURRENT_MAX)) {
         mc_configuration *mcconf = mempools_alloc_mcconf();
         *mcconf = *mc_interface_get_configuration();
         mcconf->l_current_max = MCCONF_SOFTSTART_CURRENT_MAX;
         mc_interface_set_configuration(mcconf);
         mempools_free_mcconf(mcconf);
-    } else if ((erpm >= MCCONF_SOFTSTART_ERPM_MAX)
+    } else if ((fabsf(erpm) >= MCCONF_SOFTSTART_ERPM_MAX)
                && (mc_interface_get_configuration()->l_current_max < MCCONF_L_CURRENT_MAX)) {
         mc_configuration *mcconf = mempools_alloc_mcconf();
         *mcconf = *mc_interface_get_configuration();
@@ -1068,7 +1054,7 @@ bool VPT_CAN_Packet(CANRxFrame rxmsg)
                        int16_t dutyI = 0;
                        memcpy(&dutyI, &rxmsg.data8[2 * (app_get_configuration()->controller_id - id)], 2);
 
-                       mc_interface_set_duty(((float)dutyI) / 30000.0);
+                       mc_interface_set_duty(((float)dutyI) / DUTY_SCALE_FACTOR);
 
                        timeout_reset();
                        VPT_Telemetry();
@@ -1081,30 +1067,30 @@ bool VPT_CAN_Packet(CANRxFrame rxmsg)
                        int16_t dutyI = 0;
                        memcpy(&dutyI, &rxmsg.data8[2 * (app_get_configuration()->controller_id - id)], 2);
 
-                       mc_interface_set_duty(((float)dutyI) / 30000.0);
+                       mc_interface_set_duty(((float)dutyI) / DUTY_SCALE_FACTOR);
 
                        timeout_reset();
                }
                break;
 
        case VPT_SET_SPEED_GET_TELEMETRY:
-               if ((app_get_configuration()->controller_id >= id) && (app_get_configuration()->controller_id < (id + (rxmsg.DLC / 2))))
-               {
-                       int16_t speedI = 0;
-                       memcpy(&speedI, &rxmsg.data8[2 * (app_get_configuration()->controller_id - id)], 2);
+           if ((app_get_configuration()->controller_id >= id)
+                   && (app_get_configuration()->controller_id < (id + (rxmsg.DLC / 2)))) {
+               int16_t trgt_half_rpm = 0;
+               memcpy(&trgt_half_rpm, &rxmsg.data8[2 * (app_get_configuration()->controller_id - id)], 2);
+               float trgt_erpm = to_erpm(trgt_half_rpm / 2.0);
+               set_current_limit(trgt_erpm);
 
-                       set_current_limit(speedI * 3);
-
-                       if ((speedI == 0) && ((mc_interface_get_rpm() / 7.0) < 3000)) {
-                           mc_interface_release_motor();
-                       } else {
-                           mc_interface_set_pid_speed(speedI * 3);
-                       }
-
-                       timeout_reset();
-                       VPT_Telemetry();
+               if ((trgt_erpm == 0) && (fabsf(get_rpm()) < 3000)) {
+                   mc_interface_release_motor();
+               } else {
+                   mc_interface_set_pid_speed(trgt_erpm);
                }
-               break;
+
+               timeout_reset();
+               VPT_Telemetry();
+           }
+           break;
 
        case VPT_SET_SPEED:
                if ((app_get_configuration()->controller_id >= id) && (app_get_configuration()->controller_id < (id + (rxmsg.DLC / 2))))
