@@ -35,22 +35,22 @@
 
 // Motor Current Max
 #ifndef MCCONF_L_CURRENT_MAX
-#define MCCONF_L_CURRENT_MAX 45
+#define MCCONF_L_CURRENT_MAX 60
 #endif
 
 // Motor Current Max Brake
 #ifndef MCCONF_L_CURRENT_MIN
-#define MCCONF_L_CURRENT_MIN -45
+#define MCCONF_L_CURRENT_MIN -60
 #endif
 
 // Battery Current Max
 #ifndef MCCONF_L_IN_CURRENT_MAX
-#define MCCONF_L_IN_CURRENT_MAX 45
+#define MCCONF_L_IN_CURRENT_MAX 90
 #endif
 
 // Battery Current Max Regen
 #ifndef MCCONF_L_IN_CURRENT_MIN
-#define MCCONF_L_IN_CURRENT_MIN -45
+#define MCCONF_L_IN_CURRENT_MIN -90
 #endif
 
 // Absolute Maximum Current
@@ -85,7 +85,7 @@
 
 // Minimum Input Voltage
 #ifndef MCCONF_L_MIN_VOLTAGE
-#define MCCONF_L_MIN_VOLTAGE 16
+#define MCCONF_L_MIN_VOLTAGE 12
 #endif
 
 // Maximum Input Voltage
@@ -95,12 +95,12 @@
 
 // Battery Voltage Cutoff Start
 #ifndef MCCONF_L_BATTERY_CUT_START
-#define MCCONF_L_BATTERY_CUT_START 16
+#define MCCONF_L_BATTERY_CUT_START 12
 #endif
 
 // Battery Voltage Cutoff End
 #ifndef MCCONF_L_BATTERY_CUT_END
-#define MCCONF_L_BATTERY_CUT_END 16
+#define MCCONF_L_BATTERY_CUT_END 12
 #endif
 
 // Slow ABS Current Limit
@@ -345,7 +345,7 @@
 
 // Observer Gain (x1M)
 #ifndef MCCONF_FOC_OBSERVER_GAIN
-#define MCCONF_FOC_OBSERVER_GAIN 4.9677e+08
+#define MCCONF_FOC_OBSERVER_GAIN 3.2e+09
 #endif
 
 // Observer Gain At Minimum Duty
@@ -465,7 +465,7 @@
 
 // Stator Saturation Compensation
 #ifndef MCCONF_FOC_SAT_COMP
-#define MCCONF_FOC_SAT_COMP 0
+#define MCCONF_FOC_SAT_COMP 0.05
 #endif
 
 // Temp Comp
@@ -555,7 +555,7 @@
 
 // Speed PID Kp
 #ifndef MCCONF_S_PID_KP
-#define MCCONF_S_PID_KP 0.008
+#define MCCONF_S_PID_KP 0.0107
 #endif
 
 // Speed PID Ki
@@ -565,12 +565,12 @@
 
 // Speed PID Kd
 #ifndef MCCONF_S_PID_KD
-#define MCCONF_S_PID_KD 0.0002
+#define MCCONF_S_PID_KD 0.00018
 #endif
 
 // Speed PID Kd Filer
 #ifndef MCCONF_S_PID_KD_FILTER
-#define MCCONF_S_PID_KD_FILTER 0.2
+#define MCCONF_S_PID_KD_FILTER 0.3
 #endif
 
 // Minimum ERPM
@@ -660,7 +660,7 @@
 
 // Invert Motor Direction
 #ifndef MCCONF_M_INVERT_DIRECTION
-#define MCCONF_M_INVERT_DIRECTION 0
+#define MCCONF_M_INVERT_DIRECTION 1
 #endif
 
 // DRV8301 OC Mode
