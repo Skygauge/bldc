@@ -35,12 +35,12 @@
 
 // Motor Current Max
 #ifndef MCCONF_L_CURRENT_MAX
-#define MCCONF_L_CURRENT_MAX 60
+#define MCCONF_L_CURRENT_MAX 40
 #endif
 
 // Motor Current Max Brake
 #ifndef MCCONF_L_CURRENT_MIN
-#define MCCONF_L_CURRENT_MIN -60
+#define MCCONF_L_CURRENT_MIN -40
 #endif
 
 // Battery Current Max
@@ -70,7 +70,7 @@
 
 // ERPM Limit Start
 #ifndef MCCONF_L_RPM_START
-#define MCCONF_L_RPM_START 0.8
+#define MCCONF_L_RPM_START 1.0
 #endif
 
 // Max ERPM Full Brake
@@ -135,12 +135,12 @@
 
 // Minimum Duty Cycle
 #ifndef MCCONF_L_MIN_DUTY
-#define MCCONF_L_MIN_DUTY 0.005
+#define MCCONF_L_MIN_DUTY 0.03
 #endif
 
 // Maximum Duty Cycle
 #ifndef MCCONF_L_MAX_DUTY
-#define MCCONF_L_MAX_DUTY 0.9999
+#define MCCONF_L_MAX_DUTY 0.99
 #endif
 
 // Maximum Wattage
@@ -250,17 +250,17 @@
 
 // Current KP
 #ifndef MCCONF_FOC_CURRENT_KP
-#define MCCONF_FOC_CURRENT_KP 0.0107
+#define MCCONF_FOC_CURRENT_KP 0.0057
 #endif
 
 // Current KI
 #ifndef MCCONF_FOC_CURRENT_KI
-#define MCCONF_FOC_CURRENT_KI 102.95
+#define MCCONF_FOC_CURRENT_KI 65.82
 #endif
 
 // Switching Frequency
 #ifndef MCCONF_FOC_F_SW
-#define MCCONF_FOC_F_SW 32000
+#define MCCONF_FOC_F_SW 16000
 #endif
 
 // Dead Time Compensation
@@ -320,12 +320,12 @@
 
 // Speed Tracker Ki
 #ifndef MCCONF_FOC_PLL_KI
-#define MCCONF_FOC_PLL_KI 40000
+#define MCCONF_FOC_PLL_KI 50000
 #endif
 
 // Motor Inductance (L)
 #ifndef MCCONF_FOC_MOTOR_L
-#define MCCONF_FOC_MOTOR_L 6.41e-06
+#define MCCONF_FOC_MOTOR_L 5.65e-06
 #endif
 
 // Motor Inductance Difference (Ld - Lq)
@@ -335,22 +335,22 @@
 
 // Motor Resistance (R)
 #ifndef MCCONF_FOC_MOTOR_R
-#define MCCONF_FOC_MOTOR_R 0.062
+#define MCCONF_FOC_MOTOR_R 0.0658
 #endif
 
 // Motor Flux Linkage (?)
 #ifndef MCCONF_FOC_MOTOR_FLUX_LINKAGE
-#define MCCONF_FOC_MOTOR_FLUX_LINKAGE 0.001459
+#define MCCONF_FOC_MOTOR_FLUX_LINKAGE 0.001683
 #endif
 
 // Observer Gain (x1M)
 #ifndef MCCONF_FOC_OBSERVER_GAIN
-#define MCCONF_FOC_OBSERVER_GAIN 3.2e+09
+#define MCCONF_FOC_OBSERVER_GAIN 3.0e+09
 #endif
 
 // Observer Gain At Minimum Duty
 #ifndef MCCONF_FOC_OBSERVER_GAIN_SLOW
-#define MCCONF_FOC_OBSERVER_GAIN_SLOW 0.3
+#define MCCONF_FOC_OBSERVER_GAIN_SLOW 0.1
 #endif
 
 // Duty Downramp Kp
@@ -365,12 +365,12 @@
 
 // Openloop ERPM
 #ifndef MCCONF_FOC_OPENLOOP_RPM
-#define MCCONF_FOC_OPENLOOP_RPM 1250
+#define MCCONF_FOC_OPENLOOP_RPM 10000
 #endif
 
 // Openloop ERPM at Min Current
 #ifndef MCCONF_FOC_OPENLOOP_RPM_LOW
-#define MCCONF_FOC_OPENLOOP_RPM_LOW 0.1
+#define MCCONF_FOC_OPENLOOP_RPM_LOW 0.01
 #endif
 
 // D Axis Gain Scaling Start
@@ -390,12 +390,12 @@
 
 // Openloop Lock Time
 #ifndef MCCONF_FOC_SL_OPENLOOP_T_LOCK
-#define MCCONF_FOC_SL_OPENLOOP_T_LOCK 0.5
+#define MCCONF_FOC_SL_OPENLOOP_T_LOCK 0.1
 #endif
 
 // Openloop Ramp Time
 #ifndef MCCONF_FOC_SL_OPENLOOP_T_RAMP
-#define MCCONF_FOC_SL_OPENLOOP_T_RAMP 0.4
+#define MCCONF_FOC_SL_OPENLOOP_T_RAMP 0.3
 #endif
 
 // Openloop Time
@@ -450,7 +450,7 @@
 
 // Sensorless ERPM
 #ifndef MCCONF_FOC_SL_ERPM
-#define MCCONF_FOC_SL_ERPM 2500
+#define MCCONF_FOC_SL_ERPM 5000
 #endif
 
 // Sample in V0 and V7
@@ -460,12 +460,12 @@
 
 // High Current Sampling Mode
 #ifndef MCCONF_FOC_SAMPLE_HIGH_CURRENT
-#define MCCONF_FOC_SAMPLE_HIGH_CURRENT 0
+#define MCCONF_FOC_SAMPLE_HIGH_CURRENT 1
 #endif
 
 // Stator Saturation Compensation
 #ifndef MCCONF_FOC_SAT_COMP
-#define MCCONF_FOC_SAT_COMP 0.05
+#define MCCONF_FOC_SAT_COMP 0.25
 #endif
 
 // Temp Comp
@@ -485,7 +485,7 @@
 
 // Current Controller Decoupling
 #ifndef MCCONF_FOC_CC_DECOUPLING
-#define MCCONF_FOC_CC_DECOUPLING 2
+#define MCCONF_FOC_CC_DECOUPLING 3
 #endif
 
 // Observer Type
@@ -555,17 +555,17 @@
 
 // Speed PID Kp
 #ifndef MCCONF_S_PID_KP
-#define MCCONF_S_PID_KP 0.0107
+#define MCCONF_S_PID_KP 0.03
 #endif
 
 // Speed PID Ki
 #ifndef MCCONF_S_PID_KI
-#define MCCONF_S_PID_KI 0.004
+#define MCCONF_S_PID_KI 0.01
 #endif
 
 // Speed PID Kd
 #ifndef MCCONF_S_PID_KD
-#define MCCONF_S_PID_KD 0.00018
+#define MCCONF_S_PID_KD 0.0007
 #endif
 
 // Speed PID Kd Filer
@@ -575,7 +575,7 @@
 
 // Minimum ERPM
 #ifndef MCCONF_S_PID_MIN_RPM
-#define MCCONF_S_PID_MIN_RPM 5000
+#define MCCONF_S_PID_MIN_RPM 6000
 #endif
 
 // Allow Braking
@@ -585,7 +585,7 @@
 
 // Ramp eRPMs per second
 #ifndef MCCONF_S_PID_RAMP_ERPMS_S
-#define MCCONF_S_PID_RAMP_ERPMS_S -1
+#define MCCONF_S_PID_RAMP_ERPMS_S 300000
 #endif
 
 // Position PID Kp
