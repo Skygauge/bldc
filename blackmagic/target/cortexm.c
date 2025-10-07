@@ -25,6 +25,9 @@
  *
  * Also supports Cortex-M0 / ARMv6-M
  */
+
+#pragma GCC optimize ("Os")
+
 #include "general.h"
 #include "exception.h"
 #include "adiv5.h"
@@ -52,9 +55,7 @@ static void cortexm_regs_read(target *t, void *data);
 static void cortexm_regs_write(target *t, const void *data);
 static uint32_t cortexm_pc_read(target *t);
 
-static void cortexm_reset(target *t);
 static enum target_halt_reason cortexm_halt_poll(target *t, target_addr *watch);
-static void cortexm_halt_request(target *t);
 static int cortexm_fault_unwind(target *t);
 
 static int cortexm_breakwatch_set(target *t, struct breakwatch *);
@@ -500,7 +501,7 @@ static void cortexm_pc_write(target *t, const uint32_t val)
 
 /* The following three routines implement target halt/resume
  * using the core debug registers in the NVIC. */
-static void cortexm_reset(target *t)
+void cortexm_reset(target *t)
 {
 	if ((t->target_options & CORTEXM_TOPT_INHIBIT_SRST) == 0) {
 		platform_srst_set_val(true);
@@ -534,7 +535,7 @@ static void cortexm_reset(target *t)
 	platform_delay(1);
 }
 
-static void cortexm_halt_request(target *t)
+void cortexm_halt_request(target *t)
 {
 	volatile struct exception e;
 	TRY_CATCH (e, EXCEPTION_TIMEOUT) {
@@ -1023,4 +1024,3 @@ static int cortexm_hostio_request(target *t)
 
 	return t->tc->interrupted;
 }
-

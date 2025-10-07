@@ -17,6 +17,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
     */
 
+#pragma GCC optimize ("Os")
+
 #include "app.h"
 
 #include "ch.h"
@@ -25,12 +27,10 @@
 #include "servo_dec.h"
 #include "mc_interface.h"
 #include "timeout.h"
-#include "utils.h"
+#include "utils_math.h"
+#include "utils_sys.h"
 #include "comm_can.h"
 #include <math.h>
-
-// Only available if servo output is not active
-#if !SERVO_OUT_ENABLE
 
 // Settings
 #define MAX_CAN_AGE						0.1
@@ -38,7 +38,7 @@
 
 // Threads
 static THD_FUNCTION(ppm_thread, arg);
-static THD_WORKING_AREA(ppm_thread_wa, 1536);
+__attribute__((section(".ram4"))) static THD_WORKING_AREA(ppm_thread_wa, 512);
 static thread_t *ppm_tp;
 static volatile bool ppm_rx = false;
 
@@ -52,12 +52,12 @@ static volatile ppm_config config;
 static volatile int pulses_without_power = 0;
 static float input_val = 0.0;
 static volatile float direction_hyst = 0;
+static volatile bool ppm_detached = false;
+static volatile float ppm_override = 0.0;
 
 // Private functions
-#endif
 
 void app_ppm_configure(ppm_config *conf) {
-#if !SERVO_OUT_ENABLE
 	config = *conf;
 	pulses_without_power = 0;
 
@@ -66,20 +66,14 @@ void app_ppm_configure(ppm_config *conf) {
 	}
 
 	direction_hyst = config.max_erpm_for_dir * 0.20;
-#else
-	(void)conf;
-#endif
 }
 
 void app_ppm_start(void) {
-#if !SERVO_OUT_ENABLE
 	stop_now = false;
 	chThdCreateStatic(ppm_thread_wa, sizeof(ppm_thread_wa), NORMALPRIO, ppm_thread, NULL);
-#endif
 }
 
 void app_ppm_stop(void) {
-#if !SERVO_OUT_ENABLE
 	stop_now = true;
 
 	if (is_running) {
@@ -90,18 +84,20 @@ void app_ppm_stop(void) {
 	while(is_running) {
 		chThdSleepMilliseconds(1);
 	}
-#endif
 }
 
 float app_ppm_get_decoded_level(void) {
-#if !SERVO_OUT_ENABLE
 	return input_val;
-#else
-	return 0.0;
-#endif
 }
 
-#if !SERVO_OUT_ENABLE
+void app_ppm_detach(bool detach) {
+	ppm_detached = detach;
+}
+
+void app_ppm_override(float val) {
+	ppm_override = val;
+}
+
 static void servodec_func(void) {
 	ppm_rx = true;
 	chSysLockFromISR();
@@ -135,13 +131,20 @@ static THD_FUNCTION(ppm_thread, arg) {
 		const volatile mc_configuration *mcconf = mc_interface_get_configuration();
 		const float rpm_now = mc_interface_get_rpm();
 		float servo_val = servodec_get_servo(0);
+
+		if (ppm_detached) {
+			servo_val = ppm_override;
+		}
+
 		float servo_ms = utils_map(servo_val, -1.0, 1.0, config.pulse_start, config.pulse_end);
+
 		static bool servoError = false;
 
 		switch (config.ctrl_type) {
 		case PPM_CTRL_TYPE_CURRENT_NOREV:
 		case PPM_CTRL_TYPE_DUTY_NOREV:
 		case PPM_CTRL_TYPE_PID_NOREV:
+		case PPM_CTRL_TYPE_PID_POSITION_360:
 			input_val = servo_val;
 			servo_val += 1.0;
 			servo_val /= 2.0;
@@ -159,7 +162,6 @@ static THD_FUNCTION(ppm_thread, arg) {
 			input_val = servo_val;
 			break;
 		}
-
 		// All pins and buttons are still decoded for debugging, even
 		// when output is disabled.
 		if (app_is_output_disabled()) {
@@ -181,7 +183,7 @@ static THD_FUNCTION(ppm_thread, arg) {
 				}
 			}
 			continue;
-		} else if (mc_interface_get_fault() != FAULT_CODE_NONE){
+		} else if (mc_interface_get_fault() != FAULT_CODE_NONE && config.safe_start != SAFE_START_NO_FAULT){
 			pulses_without_power = 0;
 		}
 
@@ -251,7 +253,12 @@ static THD_FUNCTION(ppm_thread, arg) {
 					}
 				}
 
-				current = servo_val * mcconf->lo_current_motor_max_now;
+				if (rpm_now >= 0.0) { //Accelerate
+					current = servo_val * mcconf->lo_current_max;
+				} else { //Brake
+					current = servo_val * fabsf(mcconf->lo_current_min);
+				}
+
 			} else {
 				// too fast
 				if (force_brake){
@@ -278,10 +285,10 @@ static THD_FUNCTION(ppm_thread, arg) {
 
 				if (current_mode_brake) {
 					// braking
-					current = fabsf(servo_val * mcconf->lo_current_motor_min_now);
+					current = fabsf(servo_val * mcconf->lo_current_min);
 				} else {
 					// reverse acceleration
-					current = servo_val * fabsf(mcconf->lo_current_motor_min_now);
+					current = servo_val * fabsf(mcconf->lo_current_min);
 				}
 			}
 
@@ -294,10 +301,9 @@ static THD_FUNCTION(ppm_thread, arg) {
 		case PPM_CTRL_TYPE_CURRENT_NOREV:
 			current_mode = true;
 			if ((servo_val >= 0.0 && rpm_now >= 0.0) || (servo_val < 0.0 && rpm_now <= 0.0)) { //Accelerate
-				current = servo_val * mcconf->lo_current_motor_max_now;
-
+				current = servo_val * mcconf->lo_current_max;
 			} else { //Brake
-				current = servo_val * fabsf(mcconf->lo_current_motor_min_now);
+				current = servo_val * fabsf(mcconf->lo_current_min);
 			}
 
 			if (fabsf(servo_val) < 0.001) {
@@ -311,9 +317,9 @@ static THD_FUNCTION(ppm_thread, arg) {
 			current_mode_brake = servo_val < 0.0;
 
 			if (servo_val >= 0.0 && rpm_now > 0.0) { //Positive input AND going forward = accelerating
-				current = servo_val * mcconf->lo_current_motor_max_now;
+				current = servo_val * mcconf->lo_current_max;
 			} else { //Negative input OR going backwards = brake (no reverse allowed in those control types)
-				current = fabsf(servo_val * mcconf->lo_current_motor_min_now);
+				current = fabsf(servo_val * mcconf->lo_current_min);
 			}
 
 			if (fabsf(servo_val) < 0.001) {
@@ -342,6 +348,34 @@ static THD_FUNCTION(ppm_thread, arg) {
 			if (!(pulses_without_power < MIN_PULSES_WITHOUT_POWER && config.safe_start)) {
 				mc_interface_set_pid_speed(servo_val * config.pid_max_erpm);
 				send_current = true;
+			}
+			break;
+
+		case PPM_CTRL_TYPE_PID_POSITION_180: // -180 to 180. center ppm safestart
+		case PPM_CTRL_TYPE_PID_POSITION_360: // 0 to +360. minimum ppm safestart
+			if (fabsf(servo_val) < 0.02) {
+				pulses_without_power++;
+			}
+
+			float angle;
+			if (config.ctrl_type == PPM_CTRL_TYPE_PID_POSITION_180) {
+				angle = (servo_val * 180); // -1 <> +1
+			} else {
+				angle = (servo_val * 360); // 0 <> +1
+			}
+			utils_norm_angle(&angle);
+			if (!(pulses_without_power < MIN_PULSES_WITHOUT_POWER && config.safe_start)) {
+				// try to more intelligently safe start by waiting until 
+				// ppm "angle" is close to motor angle to go into position mode.
+				if (mc_interface_get_control_mode() != CONTROL_MODE_POS){ 	
+					if (fabsf(angle - mc_interface_get_pid_pos_now()) < 10) {
+						// enable position control.
+						mc_interface_set_pid_pos(angle);
+					}
+					break;
+				} else {
+					mc_interface_set_pid_pos(angle);
+				}
 			}
 			break;
 
@@ -491,7 +525,7 @@ static THD_FUNCTION(ppm_thread, arg) {
 
 						if (msg->id >= 0 && UTILS_AGE_S(msg->rx_time) < MAX_CAN_AGE) {
 							//Traction Control - Applied to slaves except if a fault has occured on the local VESC (undriven wheel may generate fake RPM)
-							if (config.tc && !autoTCdisengaged) {
+							if (config.tc && config.tc_max_diff > 1.0 && !autoTCdisengaged) {
 								float rpm_tmp = msg->rpm;
 								if (is_reverse) {
 									rpm_tmp = -rpm_tmp;
@@ -509,7 +543,7 @@ static THD_FUNCTION(ppm_thread, arg) {
 						}
 					}
 					//Traction Control - Applying locally
-					if (config.tc) {
+					if (config.tc && config.tc_max_diff > 1.0) {
 						float diff = rpm_local - rpm_lowest;
 						current_out = utils_map(diff, 0.0, config.tc_max_diff, current, 0.0);
 						if (current_out < mcconf->cc_min_current) {
@@ -528,4 +562,4 @@ static THD_FUNCTION(ppm_thread, arg) {
 
 	}
 }
-#endif
+
