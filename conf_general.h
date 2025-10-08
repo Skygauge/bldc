@@ -70,7 +70,7 @@
  */
 //#include			"mcconf_default.h"
 //#include 			"mcconf_china_60kv.h"
-#include "skygauge_m_2814.h"
+#include "mcconf_skygauge.h"
 /*
  * Select default user app configuration
  */

@@ -1065,10 +1065,6 @@ float mc_interface_get_rpm(void) {
 	return DIR_MULT * ret;
 }
 
-bool mc_interface_get_openloop(void) {
-    return mcpwm_foc_get_phase_observer_override();
-}
-
 /**
  * Get the amount of amp hours drawn from the input source.
  *
