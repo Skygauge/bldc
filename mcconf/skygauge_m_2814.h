@@ -338,10 +338,10 @@
 #define MCCONF_GPD_CURRENT_KI 50
 
 // Speed PID Kp
-#define MCCONF_S_PID_KP 0.001
+#define MCCONF_S_PID_KP 0.003
 
 // Speed PID Ki
-#define MCCONF_S_PID_KI 0.001
+#define MCCONF_S_PID_KI 0.002
 
 // Speed PID Kd
 #define MCCONF_S_PID_KD 0
@@ -403,7 +403,7 @@
 #define MCCONF_M_SENSOR_PORT_MODE 0
 
 // Invert Motor Direction
-#define MCCONF_M_INVERT_DIRECTION 1
+#define MCCONF_M_INVERT_DIRECTION 0
 
 // DRV8301 OC Mode
 #define MCCONF_M_DRV8301_OC_MODE 0
