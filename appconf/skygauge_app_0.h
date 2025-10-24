@@ -5,7 +5,7 @@
 
 // VESC ID
 #ifndef APPCONF_CONTROLLER_ID
-#define APPCONF_CONTROLLER_ID 3
+#define APPCONF_CONTROLLER_ID 0
 #endif
 
 // Timeout

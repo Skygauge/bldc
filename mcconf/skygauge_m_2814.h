@@ -25,7 +25,7 @@
 
 // Soft start max current
 #ifndef MCCONF_SOFTSTART_CURRENT_MAX
-#define MCCONF_SOFTSTART_CURRENT_MAX 2
+#define MCCONF_SOFTSTART_CURRENT_MAX 3
 #endif
 
 // Soft start max ERPM
@@ -35,12 +35,12 @@
 
 // Motor Current Max
 #ifndef MCCONF_L_CURRENT_MAX
-#define MCCONF_L_CURRENT_MAX 60
+#define MCCONF_L_CURRENT_MAX 30
 #endif
 
 // Motor Current Max Brake
 #ifndef MCCONF_L_CURRENT_MIN
-#define MCCONF_L_CURRENT_MIN -60
+#define MCCONF_L_CURRENT_MIN -30
 #endif
 
 // Battery Current Max
@@ -140,7 +140,7 @@
 
 // Maximum Duty Cycle
 #ifndef MCCONF_L_MAX_DUTY
-#define MCCONF_L_MAX_DUTY 0.9999
+#define MCCONF_L_MAX_DUTY 0.99
 #endif
 
 // Maximum Wattage
@@ -250,17 +250,17 @@
 
 // Current KP
 #ifndef MCCONF_FOC_CURRENT_KP
-#define MCCONF_FOC_CURRENT_KP 0.0107
+#define MCCONF_FOC_CURRENT_KP 0.0048
 #endif
 
 // Current KI
 #ifndef MCCONF_FOC_CURRENT_KI
-#define MCCONF_FOC_CURRENT_KI 102.95
+#define MCCONF_FOC_CURRENT_KI 60
 #endif
 
 // Switching Frequency
 #ifndef MCCONF_FOC_F_SW
-#define MCCONF_FOC_F_SW 32000
+#define MCCONF_FOC_F_SW 30000
 #endif
 
 // Dead Time Compensation
@@ -325,32 +325,32 @@
 
 // Motor Inductance (L)
 #ifndef MCCONF_FOC_MOTOR_L
-#define MCCONF_FOC_MOTOR_L 6.41e-06
+#define MCCONF_FOC_MOTOR_L 5.65e-06
 #endif
 
 // Motor Inductance Difference (Ld - Lq)
 #ifndef MCCONF_FOC_MOTOR_LD_LQ_DIFF
-#define MCCONF_FOC_MOTOR_LD_LQ_DIFF 0
+#define MCCONF_FOC_MOTOR_LD_LQ_DIFF 3.28e-06
 #endif
 
 // Motor Resistance (R)
 #ifndef MCCONF_FOC_MOTOR_R
-#define MCCONF_FOC_MOTOR_R 0.062
+#define MCCONF_FOC_MOTOR_R 0.0658
 #endif
 
 // Motor Flux Linkage (?)
 #ifndef MCCONF_FOC_MOTOR_FLUX_LINKAGE
-#define MCCONF_FOC_MOTOR_FLUX_LINKAGE 0.001459
+#define MCCONF_FOC_MOTOR_FLUX_LINKAGE 0.00177
 #endif
 
 // Observer Gain (x1M)
 #ifndef MCCONF_FOC_OBSERVER_GAIN
-#define MCCONF_FOC_OBSERVER_GAIN 3.2e+09
+#define MCCONF_FOC_OBSERVER_GAIN 2.5e+09
 #endif
 
 // Observer Gain At Minimum Duty
 #ifndef MCCONF_FOC_OBSERVER_GAIN_SLOW
-#define MCCONF_FOC_OBSERVER_GAIN_SLOW 0.3
+#define MCCONF_FOC_OBSERVER_GAIN_SLOW 0.01
 #endif
 
 // Duty Downramp Kp
@@ -365,7 +365,7 @@
 
 // Openloop ERPM
 #ifndef MCCONF_FOC_OPENLOOP_RPM
-#define MCCONF_FOC_OPENLOOP_RPM 1250
+#define MCCONF_FOC_OPENLOOP_RPM 2500
 #endif
 
 // Openloop ERPM at Min Current
@@ -390,7 +390,7 @@
 
 // Openloop Lock Time
 #ifndef MCCONF_FOC_SL_OPENLOOP_T_LOCK
-#define MCCONF_FOC_SL_OPENLOOP_T_LOCK 0.5
+#define MCCONF_FOC_SL_OPENLOOP_T_LOCK 0.1
 #endif
 
 // Openloop Ramp Time
@@ -555,7 +555,7 @@
 
 // Speed PID Kp
 #ifndef MCCONF_S_PID_KP
-#define MCCONF_S_PID_KP 0.0107
+#define MCCONF_S_PID_KP 0.007
 #endif
 
 // Speed PID Ki
@@ -565,12 +565,12 @@
 
 // Speed PID Kd
 #ifndef MCCONF_S_PID_KD
-#define MCCONF_S_PID_KD 0.00018
+#define MCCONF_S_PID_KD 0.0004
 #endif
 
 // Speed PID Kd Filer
 #ifndef MCCONF_S_PID_KD_FILTER
-#define MCCONF_S_PID_KD_FILTER 0.3
+#define MCCONF_S_PID_KD_FILTER 0.2
 #endif
 
 // Minimum ERPM
@@ -620,7 +620,7 @@
 
 // Minimum Current
 #ifndef MCCONF_CC_MIN_CURRENT
-#define MCCONF_CC_MIN_CURRENT 0
+#define MCCONF_CC_MIN_CURRENT 0.1
 #endif
 
 // Current Controller Gain
